@@ -90,10 +90,10 @@ This package does not supply a grammar, lexer, incremental parser/reparse schedu
 
 ## Verification
 
-Run from the repository root:
+Run from this library repository:
 
 ```sh
-just ecosystem-test syntax
+(cd ../verification && just ecosystem-test syntax)
 ```
 
 The verifier checks formatting, 18 library black-box tests, four versioned consumer tests, fresh and cached consumer builds, a runnable example, native consumer tests over retained independent tree/configuration reference results and all 18 library tests under Go's race detector. No CI integration is required.
