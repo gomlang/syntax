@@ -1,6 +1,6 @@
 # syntax example
 
-An example of the public `ecosystem::syntax` API. `config.gom` implements this small lossless configuration language:
+An example of the public `ecosystem::syntax` API. `config.goml` implements this small lossless configuration language:
 
 ```text
 # preserved document comment
