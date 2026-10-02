@@ -111,3 +111,9 @@ goml verify --timeout 300s
 ```
 
 `goml test` builds the example and runs its tests. `goml verify` repeats the example checks as an independent module against an isolated registry snapshot. `(cd ../verification && just ecosystem-test syntax)` also retains the library-specific smoke and compatibility checks.
+
+`text_slice` seeks each overlapping nonempty token through cached child-end offsets.
+It does not walk unrelated prefix/suffix subtrees or zero-width elements. For K
+overlapping tokens, depth D and maximum fanout F, lookup costs O(K D log(F + 1))
+plus the returned bytes; an empty range only validates its boundaries. This makes
+small document excerpts independent of the rest of a large shared syntax tree.

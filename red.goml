@@ -267,17 +267,19 @@ impl SyntaxNode {
         let _ = self.token_at_offset(range.start())?;
         let _ = self.token_at_offset(range.end())?;
         let output = text::StringBuilder::new();
-        for token in self.tokens() {
-            if let Some(overlap) = token.range().intersect(range) {
-                if !overlap.is_empty() {
-                    output.write_string(
-                        token.text().byte_slice(
-                            overlap.start() - token.offset,
-                            overlap.end() - token.offset,
-                        ),
-                    );
-                }
-            }
+        let mut cursor = range.start();
+        while cursor < range.end() {
+            let token = match self.token_containing_byte(cursor) {
+                Some(value) => value,
+                None => return Result::Err(Error::Bounds),
+            };
+            let end = if token.range().end() < range.end() {
+                token.range().end()
+            } else {
+                range.end()
+            };
+            output.write_string(token.text().byte_slice(cursor - token.offset, end - token.offset));
+            cursor = end;
         }
         Result::Ok(output.finish())
     }
