@@ -1,6 +1,6 @@
-# syntax consumer
+# syntax example
 
-An independent versioned client of `ecosystem::syntax 0.1.0`. `config.gom` implements this small lossless configuration language:
+An example of the public `ecosystem::syntax` API. `config.gom` implements this small lossless configuration language:
 
 ```text
 # preserved document comment
@@ -17,4 +17,6 @@ Keys and section names are nonnumeric words. Values are one word, a checked mach
 
 `Entry` implements the external `syntax::AstNode` trait. `entries` exposes direct typed children; `section` navigates a name path; `string_value` and `integer_value` check scalar types. `rewrite` replaces the first matching direct key's scalar token, preserving every other byte and the old snapshot. Duplicate section names select the first matching section. A replacement must be exactly one valid scalar, without leading/trailing trivia. It does not create missing keys or close missing braces.
 
-The executable runs a checked parse/read/rewrite example by default. `--json` accepts the deterministic tree and configuration requests used by the native reference tests; it returns structural/range reports and edit results. Use `(cd ../../verification && just ecosystem-test syntax)` from the consumer directory to provision its registry snapshot, format-check, build, test and run the consumer.
+The executable runs a checked parse/read/rewrite example by default. `--json` accepts the deterministic tree and configuration requests used by the native reference tests; it returns structural/range reports and edit results. Use `(cd ../../../verification && just ecosystem-test syntax)` from the example directory to provision its registry snapshot, format-check, build, test and run the example.
+
+This example shares the library root manifest and development dependencies. Run `goml verify --example basic` to build and test it as an independent downstream module.

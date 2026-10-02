@@ -1,6 +1,6 @@
 package tests;
 
-use consumer::syntax as app;
+use ecosystem::syntax::examples::basic as app;
 use ecosystem::syntax;
 use std::testing;
 

@@ -2,7 +2,7 @@
 
 A pure GoML lossless syntax tree library inspired by [Rowan](https://docs.rs/rowan/latest/rowan/). It provides immutable green nodes, contextual red views, checked parser construction, bounded interning, typed AST adapters and persistent tree edits. It has no native adapter or dependency outside the GoML standard library.
 
-The module is `ecosystem::syntax`. The separate `consumer::syntax` module resolves version `0.1.0` and implements a nested configuration language with comments, whitespace, error recovery, typed values and trivia-preserving rewrites.
+The module is `ecosystem::syntax`. The `examples/basic/` example implements a nested configuration language with comments, whitespace, error recovery, typed values and trivia-preserving rewrites.
 
 ## Constructing a tree
 
@@ -86,7 +86,7 @@ For height `H`, maximum fanout `W`, logical elements `E` and text bytes `B`:
 
 Explicitly raising limits can describe enormous logical trees in little memory. Full text materialization or traversal still needs resources proportional to their logical contents. Allocation exhaustion and panics from application code are not converted into errors. There is no cancellation protocol for tree operations.
 
-This package does not supply a grammar, lexer, incremental parser/reparse scheduler, mutation-in-place red nodes, persistent edit-position tracking, grapheme/UTF-16 line indexes, serialization format or compiler CST migration. The independent consumer shows how to layer parsing and domain diagnostics over the tree; `rope`, `logos` and `incremental` remain separate ecosystem libraries.
+This package does not supply a grammar, lexer, incremental parser/reparse scheduler, mutation-in-place red nodes, persistent edit-position tracking, grapheme/UTF-16 line indexes, serialization format or compiler CST migration. The example shows how to layer parsing and domain diagnostics over the tree; `rope`, `logos` and `incremental` remain separate ecosystem libraries.
 
 ## Verification
 
@@ -96,6 +96,18 @@ Run from this library repository:
 (cd ../verification && just ecosystem-test syntax)
 ```
 
-The verifier checks formatting, 18 library black-box tests, four versioned consumer tests, fresh and cached consumer builds, a runnable example, native consumer tests over retained independent tree/configuration reference results and all 18 library tests under Go's race detector. No CI integration is required.
+The verifier checks formatting, 18 library black-box tests, four example tests, downstream checks, fresh and cached example builds, a runnable example, native example tests over retained independent tree/configuration reference results and all 18 library tests under Go's race detector. No CI integration is required.
 
 The oracle compares 320 tree models, 3,840 persistent edits and 240 configuration rewrites. It independently computes lossless text, full preorder paths/kinds/ranges, tree summaries, all selected byte offsets, Unicode slicing failures, changed trees and retained snapshots. Configuration cases exercise Unicode keys/strings, escapes, nested sections, comments, CRLF and rejected replacement literals. Unit tests add malformed builder states, foreign/stale checkpoints, cache budgets/eviction, duplicate shared zero-width occurrences, error recovery, typed AST trait bounds, 10,000-deep iterative operations, aggregate overflow without enormous allocations, and concurrent interning/read/edit workloads.
+
+## Development and examples
+
+Requires GoML 0.1.55 or newer. The `examples/basic/` example shares the root manifest; test-only helpers are declared in `[dev-dependencies]`. From the library root, run:
+
+```sh
+goml run --example basic
+goml test
+goml verify --timeout 300s
+```
+
+`goml test` builds the example and runs its tests. `goml verify` repeats the example checks as an independent module against an isolated registry snapshot. `(cd ../verification && just ecosystem-test syntax)` also retains the library-specific smoke and compatibility checks.
