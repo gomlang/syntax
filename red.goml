@@ -260,26 +260,30 @@ impl SyntaxNode {
         )
     }
 
-    pub fn text_slice(self: SyntaxNode, range: TextRange) -> Result[string, Error] {
+    pub fn tokens_in_range(self: SyntaxNode, range: TextRange) -> Result[RangeTokens, Error] {
         if !self.range().contains_range(range) {
             return Result::Err(Error::Bounds)
         }
         let _ = self.token_at_offset(range.start())?;
         let _ = self.token_at_offset(range.end())?;
+        Result::Ok(RangeTokens { node: self, cursor: Ref::new(range.start()), end: range.end() })
+    }
+
+    pub fn text_slice(self: SyntaxNode, range: TextRange) -> Result[string, Error] {
+        let tokens = self.tokens_in_range(range)?;
         let output = text::StringBuilder::new();
-        let mut cursor = range.start();
-        while cursor < range.end() {
-            let token = match self.token_containing_byte(cursor) {
-                Some(value) => value,
-                None => return Result::Err(Error::Bounds),
+        for token in tokens {
+            let start = if token.offset < range.start() {
+                range.start()
+            } else {
+                token.offset
             };
             let end = if token.range().end() < range.end() {
                 token.range().end()
             } else {
                 range.end()
             };
-            output.write_string(token.text().byte_slice(cursor - token.offset, end - token.offset));
-            cursor = end;
+            output.write_string(token.text().byte_slice(start - token.offset, end - token.offset));
         }
         Result::Ok(output.finish())
     }
@@ -723,5 +727,38 @@ impl Iterator for NodeDescendants {
             }
         }
         Option::None
+    }
+}
+
+pub struct RangeTokens {
+    node: SyntaxNode,
+    cursor: Ref[isize],
+    end: isize,
+}
+
+impl Iterator for RangeTokens {
+    type Item = SyntaxToken;
+
+    fn next(self: RangeTokens) -> Option[SyntaxToken] {
+        let offset = self.cursor.get();
+        if offset >= self.end {
+            return Option::None
+        }
+        match self.node.token_containing_byte(offset) {
+            Some(token) => {
+                self.cursor.set(
+                    if token.range().end() < self.end {
+                        token.range().end()
+                    } else {
+                        self.end
+                    },
+                );
+                Option::Some(token)
+            },
+            None => {
+                self.cursor.set(self.end);
+                Option::None
+            },
+        }
     }
 }

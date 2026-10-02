@@ -47,7 +47,7 @@ Builders and iterators have mutable cursors: copying them shares that state. The
 | Green inspection | `kind`, `text`, `len_bytes`, `element_count`, `depth`, `max_children`, `children`, `child`, `child_count`, `child_offset`, `fingerprint`, `same_allocation`, `structural_eq`, `validate_limits` as applicable |
 | Red navigation | `SyntaxNode::new_root`, `green`, `kind`, `range`, `text`, `index`, `parent`, `root`, `same_tree`, `same_occurrence`, `child_at`, `first_child` / `last_child`, `first_child_or_token` / `last_child_or_token`, `next_sibling` / `prev_sibling` |
 | Element/token navigation | `as_node`, `as_token`, `element`, `next_sibling_or_token`, `prev_sibling_or_token`, `first_token`, `last_token`, `next_token`, `prev_token`, `ancestors` |
-| Iteration | `children`, `children_with_tokens`, `descendants`, `descendants_with_tokens`, `tokens`, `walk`; standard `Iterator` implementations work with `std::iter` |
+| Iteration | `children`, `children_with_tokens`, `descendants`, `descendants_with_tokens`, `tokens`, `tokens_in_range`, `walk`; standard `Iterator` implementations work with `std::iter` |
 | Text queries | Checked `TextRange::new`, `start`, `end`, `len`, containment and intersection; `token_at_offset`, `text_slice`, `covering_element` |
 | Persistent editing | `GreenNode::splice_children`, red `replace_with`, `SyntaxElement::replace_in` |
 | Typed AST | Consumer implementations of `AstNode::cast` / `syntax`; generic `ast_children[T: AstNode]` |
@@ -64,6 +64,15 @@ Ranges are half-open UTF-8 byte ranges. EOF is a valid boundary. `TextRange` che
 `token_at_offset` returns `None`, `Single(token)` or `Between(left, right)`. At a shared token boundary it returns both nonempty neighbors. At the beginning/end of nonempty text it returns the one adjacent nonempty token. Empty nodes and zero-width tokens do not claim an offset, so an entirely empty tree returns `None`. Zero-width elements remain visible through structural traversal. Positions inside an ASCII token return `Single`; positions inside a multibyte scalar are errors.
 
 `covering_element` returns the deepest first child that contains the entire range. Empty ranges deliberately prefer the leftmost containing child, including zero-width children. `text_slice` accepts absolute ranges relative to the containing root, including when called on a subtree.
+
+`tokens_in_range(range)` checks those same absolute bounds and UTF-8 boundaries,
+then returns a fused `RangeTokens` iterator over nonempty tokens intersecting the
+half-open range. It yields complete original token views, even when an endpoint
+falls inside a token; token identity, parents and absolute ranges are preserved.
+Empty ranges yield no tokens, and zero-width tokens are excluded. Each step seeks
+by cached child ends instead of walking unrelated or zero-width subtrees. Copies
+share the mutable cursor; separate constructors are independent and may traverse
+the immutable tree concurrently. The iterator retains its containing tree.
 
 `replace_with` rebuilds the ancestors and returns a new green **root**, sharing unaffected siblings. A node/token's typed method replaces its own category; the general `SyntaxElement` method can change a child from node to token or vice versa. A root replacement must be a node. The old view and its offsets remain valid for the old snapshot. Create a new red root to navigate the replacement. `replace_in` additionally requires the supplied root to be the exact red root that owns the target and reports `ForeignTree` otherwise. `splice_children` uses child-index half-open ranges and returns the changed node itself.
 
