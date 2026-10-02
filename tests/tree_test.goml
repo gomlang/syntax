@@ -422,3 +422,56 @@ fn immutable_snapshots_and_shared_cache_support_parallel_use() -> () {
     );
     testing::assert(cache.statistics().entries <= 16);
 }
+
+#[test]
+fn small_slices_seek_in_large_shared_trees() -> () {
+    let limits = syntax::Limits {
+        max_bytes: 1000000000000,
+        max_elements: 1000000000000,
+        ..syntax::Limits::standard(),
+    };
+    let mut green = node(0, Vec::from_array([token(1, "😀é").element()]));
+    for _ in 0..30 {
+        green = testing::expect_ok(
+            syntax::GreenNode::with_limits(
+                0,
+                Vec::from_array([green.element(), green.element()]),
+                limits,
+            ),
+            "shared tree",
+        );
+    }
+    let root = syntax::SyntaxNode::new_root(green);
+    let end = root.range().end();
+    testing::assert_eq(
+        testing::expect_ok(root.text_slice(range(end - 8, end - 2)), "tail slice"),
+        "é😀",
+    );
+    testing::assert_eq(testing::expect_ok(root.text_slice(range(end, end)), "empty"), "");
+    testing::assert_err(root.text_slice(range(end - 1, end)));
+    let child = testing::expect_some(root.last_child(), "subtree");
+    testing::assert_eq(
+        testing::expect_ok(child.text_slice(range(end - 6, end)), "subtree absolute range"),
+        "😀é",
+    );
+    testing::assert_err(child.text_slice(range(0, 0)));
+}
+
+#[test]
+fn slices_skip_empty_tokens_and_cross_nested_boundaries() -> () {
+    let root = syntax::SyntaxNode::new_root(
+        node(
+            0,
+            Vec::from_array(
+                [
+                    token(1, "a").element(),
+                    node(2, Vec::from_array([token(1, "").element(), token(1, "é").element()])).element(),
+                    node(3, Vec::new()).element(),
+                    token(1, "😀z").element(),
+                ],
+            ),
+        ),
+    );
+    testing::assert_eq(testing::expect_ok(root.text_slice(range(1, 7)), "mixed"), "é😀");
+    testing::assert_eq(testing::expect_ok(root.text_slice(range(3, 3)), "seam"), "");
+}

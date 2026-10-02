@@ -55,3 +55,11 @@ fn typed_values_and_parser_depth_fail_recoverably() -> () {
         -8,
     );
 }
+
+#[test]
+fn downstream_text_excerpt_uses_absolute_unicode_ranges() -> () {
+    let source = "name = \"😀é\"\n";
+    let parsed = testing::expect_ok(app::parse(source), "parse");
+    let range = testing::expect_ok(syntax::TextRange::new(8, 14), "range");
+    testing::assert_eq(testing::expect_ok(parsed.root.text_slice(range), "excerpt"), "😀é");
+}
