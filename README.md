@@ -81,7 +81,7 @@ For height `H`, maximum fanout `W`, logical elements `E` and text bytes `B`:
 - Token-at-offset descends binary-searched child ends in `O(H log(W + 1))`; it does not scan or flatten the text.
 - Creating a node costs `O(number of children)`, independent of descendant size. Replacing a leaf costs the sum of child counts on its ancestor path, plus new token text.
 - Lossless text materialization, traversal and structural equality visit logical contents. Their iterative worklists avoid recursion; text/equality/edge-token searches can retain up to `O(E)` pending work in wide trees. Ordinary red traversal retains `O(H)` ancestor state. Green equality can skip shared subtrees.
-- Text slicing scans the subtree's tokens and allocates only the selected string. Covering-element queries scan children at each selected depth. These APIs are not a rope-backed text index.
+- Text slicing seeks overlapping nonempty tokens through cached child-end offsets and allocates only the selected string. For `K` overlapping tokens, lookup costs `O((K + 1) H log(W + 1))` plus the returned bytes; an empty range only validates its boundaries. It does not walk unrelated prefix/suffix subtrees or zero-width elements. Covering-element queries scan children at each selected depth. These APIs are not a rope-backed text index.
 - Red equality and hashing use the occurrence path and cost `O(H)` in the worst case. Walking a subtree normally compares its boundary cheaply; repeated zero-width/shared shapes can increase those comparison costs.
 
 Explicitly raising limits can describe enormous logical trees in little memory. Full text materialization or traversal still needs resources proportional to their logical contents. Allocation exhaustion and panics from application code are not converted into errors. There is no cancellation protocol for tree operations.
@@ -111,9 +111,3 @@ goml verify --timeout 300s
 ```
 
 `goml test` builds the example and runs its tests. `goml verify` repeats the example checks as an independent module against an isolated registry snapshot. `(cd ../verification && just ecosystem-test syntax)` also retains the library-specific smoke and compatibility checks.
-
-`text_slice` seeks each overlapping nonempty token through cached child-end offsets.
-It does not walk unrelated prefix/suffix subtrees or zero-width elements. For K
-overlapping tokens, depth D and maximum fanout F, lookup costs O(K D log(F + 1))
-plus the returned bytes; an empty range only validates its boundaries. This makes
-small document excerpts independent of the rest of a large shared syntax tree.
