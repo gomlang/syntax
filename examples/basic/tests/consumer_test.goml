@@ -63,3 +63,15 @@ fn downstream_text_excerpt_uses_absolute_unicode_ranges() -> () {
     let range = testing::expect_ok(syntax::TextRange::new(8, 14), "range");
     testing::assert_eq(testing::expect_ok(parsed.root.text_slice(range), "excerpt"), "😀é");
 }
+
+#[test]
+fn downstream_range_tokens_reconstruct_excerpts() -> () {
+    let parsed = testing::expect_ok(app::parse("name = \"é\"\n"), "parse");
+    let range = testing::expect_ok(syntax::TextRange::new(7, 11), "range");
+    let tokens = testing::expect_ok(parsed.root.tokens_in_range(range), "tokens");
+    let parts: Vec[string] = Vec::new();
+    for token in tokens {
+        parts.push(token.text());
+    }
+    testing::assert_eq(parts.join(""), "\"é\"");
+}

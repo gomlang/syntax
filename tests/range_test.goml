@@ -1,0 +1,87 @@
+package tests;
+
+use ecosystem::syntax;
+use std::testing;
+use std::task;
+
+#[test]
+fn range_tokens_retain_identity_and_skip_empty_elements() -> () {
+    let root = syntax::SyntaxNode::new_root(
+        node(
+            0,
+            Vec::from_array(
+                [
+                    token(1, "abé").element(),
+                    token(2, "").element(),
+                    node(3, Vec::new()).element(),
+                    node(4, Vec::from_array([token(5, "😀z").element()])).element(),
+                ],
+            ),
+        ),
+    );
+    let cursor = testing::expect_ok(root.tokens_in_range(range(1, 8)), "range");
+    let first = testing::expect_some(cursor.next(), "first");
+    testing::assert_eq(first.text(), "abé");
+    testing::assert(first.same_occurrence(testing::expect_some(root.first_token(), "original")));
+    let alias = cursor;
+    testing::assert_eq(testing::expect_some(alias.next(), "second").text(), "😀z");
+    testing::assert_none(cursor.next());
+    testing::assert_none(alias.next());
+    testing::assert_none(testing::expect_ok(root.tokens_in_range(range(4, 4)), "empty").next());
+    testing::assert_err(root.tokens_in_range(range(3, 4)));
+    testing::assert_err(root.tokens_in_range(range(0, 10)));
+    let child = testing::expect_some(root.last_child(), "child");
+    testing::assert_err(child.tokens_in_range(range(0, 4)));
+    testing::assert_eq(
+        testing::expect_some(
+            testing::expect_ok(child.tokens_in_range(range(4, 8)), "child range").next(),
+            "token",
+        ).range(),
+        range(4, 9),
+    );
+}
+
+#[test]
+fn independent_range_cursors_seek_large_shared_trees_in_parallel() -> () {
+    let limits = syntax::Limits {
+        max_bytes: 1000000000000,
+        max_elements: 1000000000000,
+        ..syntax::Limits::standard(),
+    };
+    let mut green = node(0, Vec::from_array([token(1, "é").element()]));
+    for _ in 0..30 {
+        green = testing::expect_ok(
+            syntax::GreenNode::with_limits(
+                0,
+                Vec::from_array([green.element(), green.element()]),
+                limits,
+            ),
+            "shared",
+        );
+    }
+    let root = syntax::SyntaxNode::new_root(green);
+    task::scope(
+        |scope| {
+            let results: Channel[isize] = Channel::new(4);
+            for _ in 0..4 {
+                scope.spawn(
+                    |_| {
+                        let cursor = testing::expect_ok(
+                            root.tokens_in_range(range(root.range().end() - 4, root.range().end())),
+                            "range",
+                        );
+                        let mut count = 0;
+                        for item in cursor {
+                            testing::assert_eq(item.text(), "é");
+                            count += 1;
+                        }
+                        results.send(count);
+                    },
+                );
+            }
+            for _ in 0..4 {
+                testing::assert_eq(testing::expect_some(results.recv(), "count"), 2);
+            }
+        },
+    );
+}
