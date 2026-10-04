@@ -1,0 +1,101 @@
+package tests;
+
+use ecosystem::syntax;
+use std::testing;
+
+#[test]
+fn covering_queries_seek_wide_nodes_without_scanning_empty_siblings() -> () {
+    let empty = node(1, Vec::new()).element();
+    let children: Vec[syntax::GreenElement] = Vec::new();
+    for _ in 0..32768 {
+        children.push(empty);
+    }
+    children.push(token(2, "é😀x").element());
+    children.push(empty);
+    let root = syntax::SyntaxNode::new_root(node(0, children));
+    let last = testing::expect_some(root.child_at(32768), "text child");
+    for _ in 0..2048 {
+        let found = testing::expect_ok(root.covering_element(range(6, 7)), "last byte");
+        testing::assert(found.same_occurrence(last));
+    }
+    testing::assert(
+        testing::expect_ok(root.covering_element(range(7, 7)), "EOF").same_occurrence(last),
+    );
+    testing::assert(
+        testing::expect_ok(root.covering_element(range(0, 0)), "start").same_occurrence(
+            testing::expect_some(root.first_child_or_token(), "first empty"),
+        ),
+    );
+}
+
+fn linear_covering(root: syntax::SyntaxNode, selected: syntax::TextRange) -> syntax::SyntaxElement {
+    let mut current = root.element();
+    loop {
+        let parent = match current {
+            Node(value) => value,
+            Token(_) => return current,
+        };
+        let mut found = Option::None;
+        for child in parent.children_with_tokens() {
+            if child.range().contains_range(selected) {
+                found = Option::Some(child);
+                break
+            }
+        }
+        match found {
+            Some(child) => {
+                current = child;
+            },
+            None => return current,
+        }
+    }
+}
+
+#[test]
+fn covering_matches_leftmost_linear_model_at_all_unicode_boundaries() -> () {
+    let children: Vec[syntax::GreenElement] = Vec::new();
+    for kind in 0..16 {
+        children.push(node(kind.to_u32(), Vec::new()).element());
+        children.push(
+            node(
+                (100 + kind).to_u32(),
+                Vec::from_array(
+                    [
+                        token(1, "").element(),
+                        token(2, "abé").element(),
+                        node(3, Vec::new()).element(),
+                        node(4, Vec::from_array([token(5, "😀").element(), token(6, "").element()])).element(),
+                    ],
+                ),
+            ).element(),
+        );
+        children.push(token(7, "").element());
+    }
+    let root = syntax::SyntaxNode::new_root(node(0, children));
+    let text = root.text();
+    for start in 0..=text.byte_len() {
+        for end in start..=text.byte_len() {
+            if text.is_char_boundary(start) && text.is_char_boundary(end) {
+                let selected = range(start, end);
+                let actual = testing::expect_ok(root.covering_element(selected), "covering");
+                testing::assert(actual.same_occurrence(linear_covering(root, selected)));
+            }
+        }
+    }
+    let subtree = testing::expect_some(
+        root.child_at(4).and_then(|value| value.as_node()),
+        "subtree",
+    );
+    for start in subtree.range().start()..=subtree.range().end() {
+        for end in start..=subtree.range().end() {
+            if text.is_char_boundary(start) && text.is_char_boundary(end) {
+                let selected = range(start, end);
+                testing::assert(
+                    testing::expect_ok(subtree.covering_element(selected), "subtree covering").same_occurrence(
+                        linear_covering(subtree, selected),
+                    ),
+                );
+            }
+        }
+    }
+}
