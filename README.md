@@ -95,7 +95,7 @@ For height `H`, maximum fanout `W`, logical elements `E` and text bytes `B`:
 
 Explicitly raising limits can describe enormous logical trees in little memory. Full text materialization or traversal still needs resources proportional to their logical contents. Allocation exhaustion and panics from application code are not converted into errors. There is no cancellation protocol for tree operations.
 
-This package does not supply a grammar, lexer, incremental parser/reparse scheduler, mutation-in-place red nodes, persistent edit-position tracking, grapheme/UTF-16 line indexes, serialization format or compiler CST migration. The example shows how to layer parsing and domain diagnostics over the tree; `rope`, `logos` and `incremental` remain separate ecosystem libraries.
+This package does not supply a grammar, lexer, incremental parser/reparse scheduler, mutation-in-place red nodes, persistent edit-position tracking, grapheme/UTF-16 line indexes, serialization format or compiler CST migration. The example shows how to layer parsing and domain diagnostics over the tree; `rope`, `lexer` and `incremental` remain separate ecosystem libraries.
 
 ## Verification
 
