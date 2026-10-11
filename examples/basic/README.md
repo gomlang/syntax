@@ -17,6 +17,6 @@ Keys and section names are nonnumeric words. Values are one word, a checked mach
 
 `Entry` implements the external `syntax::AstNode` trait. `entries` exposes direct typed children; `section` navigates a name path; `string_value` and `integer_value` check scalar types. `rewrite` replaces the first matching direct key's scalar token, preserving every other byte and the old snapshot. Duplicate section names select the first matching section. A replacement must be exactly one valid scalar, without leading/trailing trivia. It does not create missing keys or close missing braces.
 
-The executable runs a checked parse/read/rewrite example by default. `--json` accepts the deterministic tree and configuration requests used by the native reference tests; it returns structural/range reports and edit results. Use `(cd ../../../verification && just ecosystem-test syntax)` from the example directory to provision its registry snapshot, format-check, build, test and run the example.
+The executable runs a checked parse/read/rewrite example by default. `--json` accepts the deterministic tree and configuration requests used by the native reference tests; it returns structural/range reports and edit results. Use `(cd ../../../workflows && just ecosystem-test syntax)` from the example directory to provision its registry snapshot, format-check, build, test and run the example.
 
 This example shares the library root manifest and development dependencies. Run `goml test --timeout 300s` from the library root to build and test it.

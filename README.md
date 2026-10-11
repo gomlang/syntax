@@ -102,7 +102,7 @@ This package does not supply a grammar, lexer, incremental parser/reparse schedu
 Run from this library repository:
 
 ```sh
-(cd ../verification && just ecosystem-test syntax)
+(cd ../workflows && just ecosystem-test syntax)
 ```
 
 The verifier checks formatting, 24 library black-box tests, six example tests, downstream checks, fresh and cached example builds, a runnable example, native example tests over retained independent tree/configuration reference results and all 24 library tests under Go's race detector. No CI integration is required.
@@ -111,11 +111,11 @@ The oracle compares 320 tree models, 3,840 persistent edits and 240 configuratio
 
 ## Development and examples
 
-Requires the source-built GoML toolchain with unversioned registry support pinned in [verification/ci/toolchain.json](https://github.com/gomlang/verification/blob/main/ci/toolchain.json). The `examples/basic/` example shares the root manifest; test-only helpers are declared in `[dev-dependencies]`. From the library root, run:
+Requires the source-built GoML toolchain with unversioned registry support pinned in [workflows/ci/toolchain.json](https://github.com/gomlang/workflows/blob/main/ci/toolchain.json). The `examples/basic/` example shares the root manifest; test-only helpers are declared in `[dev-dependencies]`. From the library root, run:
 
 ```sh
 goml run --example basic
 goml test
 ```
 
-`goml test` builds the example and runs its tests. `(cd ../verification && just ecosystem-test syntax)` also retains the library-specific smoke and compatibility checks.
+`goml test` builds the example and runs its tests. `(cd ../workflows && just ecosystem-test syntax)` also retains the library-specific smoke and compatibility checks.
